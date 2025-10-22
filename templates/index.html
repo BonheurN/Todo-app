@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Todo — Dark Beige</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<main class="container">
+<h1>My Tasks</h1>
+
+
+<form id="task-form" class="task-form" onsubmit="return false;">
+<input id="task-input" placeholder="Add new task..." autocomplete="off" />
+<button id="add-btn" class="btn">Add</button>
+</form>
+
+
+<ul id="tasks-list" class="tasks"></ul>
+</main>
+
+
+<script>
+async function fetchTasks() {
+const res = await fetch('/api/tasks');
+const data = await res.json();
+const list = document.getElementById('tasks-list');
+list.innerHTML = '';
+data.forEach(t => {
+const li = document.createElement('li');
+li.className = 'task-item';
+li.innerHTML = `
+<span class="desc">${escapeHtml(t.description)}</span>
+<button class="del" data-id="${t.id}">Delete</button>
+`;
+list.appendChild(li);
+});
+
+
+document.querySelectorAll('.del').forEach(btn => {
+btn.onclick = async (e) => {
+const id = e.target.dataset.id;
+await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+fetchTasks();
+}
+});
+}
+
+
+function escapeHtml(unsafe) {
+return unsafe
+.replace(/&/g, "&amp;")
+.replace(/</g, "&lt;")
+.replace(/>/g, "&gt;")
+.replace(/\"/g, "&quot;")
+.replace(/'/g, "&#039;");
+}
+
+
+document.getElementById('add-btn').addEventListener('click', async () => {
+const input = document.getElementById('task-input');
+const desc = input.value.trim();
+if (!desc) return;
+await fetch('/api/tasks', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ description: desc })
+});
+input.value = '';
+fetchTasks();
+});
+
+
+// initial load
+fetchTasks();
+</script>
+</body>
+</html>
